@@ -278,7 +278,47 @@ async function run() {
           .json({ message: "Internal Server Error", error: error.message });
       }
     });
-   
+    app.post("/create-checkout-session", async (req, res) => {
+      const { userId, userEmail } = req.body; // ফ্রন্টএন্ড থেকে পাঠানো ইউজার ইমেইল
+
+      try {
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+
+          // 💡 এই লাইনটি যোগ করুন: ফ্রন্টএন্ড থেকে আসা ইউজারের আসল ইমেইলটি এখানে পাস করুন
+          customer_email: userEmail,
+
+          line_items: [
+            {
+              price_data: {
+                currency: "bdt",
+                product_data: {
+                  name: "Digital Life Lessons - Lifetime Premium ⭐",
+                  description:
+                    "আজীবন প্রিমিয়াম মেম্বারশিপ এবং সকল কন্টেন্টের ফুল অ্যাক্সেস।",
+                },
+                unit_amount: 150000, // ৳১৫০০
+              },
+              quantity: 1,
+            },
+          ],
+          mode: "payment",
+          metadata: {
+            userId: userId,
+            userEmail: userEmail,
+          },
+          success_url:
+            "http://localhost:3000/payment-success?session_id={CHECKOUT_SESSION_ID}",
+          cancel_url: "http://localhost:3000/pricing",
+        });
+
+        res.json({ url: session.url });
+      } catch (error) {
+        console.error("Stripe error:", error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
     app.get("/api/verify-payment", async (req, res) => {
       const { session_id } = req.query;
 
