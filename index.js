@@ -501,21 +501,20 @@ async function run() {
       }
     });
     // সব lessons আনো (admin এর জন্য)
-
-
-// Featured toggle
-app.patch("/api/admin/lessons/:id/featured", async (req, res) => {
+app.get("/api/admin/lessons", async (req, res) => {
   try {
-    const lesson = await lessonsCollection.findOne({ _id: new ObjectId(req.params.id) });
-    const result = await lessonsCollection.updateOne(
-      { _id: new ObjectId(req.params.id) },
-      { $set: { isFeatured: !lesson.isFeatured } }
-    );
-    res.json(result);
+    const lessons = await lessonsCollection
+      .find()
+      .sort({ createdAt: -1 })
+      .toArray();
+    res.json(lessons);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Featured toggle
+
 
 // Reviewed toggle
 app.patch("/api/admin/lessons/:id/reviewed", async (req, res) => {
