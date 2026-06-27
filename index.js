@@ -501,17 +501,7 @@ async function run() {
       }
     });
     // সব lessons আনো (admin এর জন্য)
-app.get("/api/admin/lessons", async (req, res) => {
-  try {
-    const lessons = await lessonsCollection
-      .find()
-      .sort({ createdAt: -1 })
-      .toArray();
-    res.json(lessons);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+
 
 // Featured toggle
 app.patch("/api/admin/lessons/:id/featured", async (req, res) => {
@@ -586,6 +576,17 @@ app.delete("/api/admin/users/:id", async (req, res) => {
 });
 
 // Reported lessons আনো (isReported: true)
+app.get("/api/admin/reported-lessons", async (req, res) => {
+  try {
+    const lessons = await lessonsCollection
+      .find({ isReported: true })
+      .sort({ createdAt: -1 })
+      .toArray();
+    res.json(lessons);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Ignore — isReported false করো
 app.patch("/api/admin/lessons/:id/ignore", async (req, res) => {
@@ -599,6 +600,8 @@ app.patch("/api/admin/lessons/:id/ignore", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+
   } catch (err) {
     console.log(err);
   }
