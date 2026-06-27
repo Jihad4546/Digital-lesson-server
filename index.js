@@ -221,50 +221,7 @@ async function run() {
       }
     });
 
-    app.post("/api/lessons/:id/favorite", async (req, res) => {
-      try {
-        const lessonId = req.params.id;
-        const { userId } = req.body;
-
-        if (!userId) {
-          return res.status(400).send({ message: "User ID is required" });
-        }
-
-        const lesson = await db
-          .collection("lessons")
-          .findOne({ _id: new ObjectId(lessonId) });
-
-        if (!lesson) {
-          return res.status(404).send({ message: "Lesson not found" });
-        }
-
-        const hasFavorited = lesson.favorites?.includes(userId);
-        let updateDoc;
-
-        if (hasFavorited) {
-          // অলরেডি সেভ করা থাকলে: রিমুভ করব এবং কাউন্ট কমাবো
-          updateDoc = {
-            $pull: { favorites: userId },
-            $inc: { favoritesCount: -1 },
-          };
-        } else {
-          // সেভ করা না থাকলে: অ্যাড করব এবং কাউন্ট বাড়াবো
-          updateDoc = {
-            $addToSet: { favorites: userId },
-            $inc: { favoritesCount: 1 },
-          };
-        }
-
-        const result = await db
-          .collection("lessons")
-          .updateOne({ _id: new ObjectId(lessonId) }, updateDoc);
-
-        res.send(result);
-      } catch (err) {
-        res.status(500).send({ error: err.message });
-      }
-    });
-
+   
     app.get("/api/lessons/favorites/:userId", async (req, res) => {
       try {
         const { userId } = req.params;
