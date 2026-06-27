@@ -176,51 +176,7 @@ async function run() {
         res.status(500).send({ error: err.message });
       }
     });
-    app.post("/api/lessons/:id/like", async (req, res) => {
-      try {
-        const lessonId = req.params.id;
-        const { userId } = req.body;
-
-        if (!userId) {
-          return res.status(400).send({ message: "User ID is required" });
-        }
-
-        // প্রথমে চেক করব ইউজার কি অলরেডি লাইক দিয়ে রেখেছে?
-        const lesson = await db
-          .collection("lessons")
-          .findOne({ _id: new ObjectId(lessonId) });
-
-        if (!lesson) {
-          return res.status(404).send({ message: "Lesson not found" });
-        }
-
-        const hasLiked = lesson.likes?.includes(userId);
-        let updateDoc;
-
-        if (hasLiked) {
-          // অলরেডি লাইক থাকলে: অ্যারে থেকে আইডি সরাবো এবং কাউন্ট ১ কমাবো
-          updateDoc = {
-            $pull: { likes: userId },
-            $inc: { likesCount: -1 },
-          };
-        } else {
-          // লাইক না থাকলে: অ্যারেতে আইডি যোগ করব এবং কাউন্ট ১ বাড়াবো
-          updateDoc = {
-            $addToSet: { likes: userId },
-            $inc: { likesCount: 1 },
-          };
-        }
-
-        const result = await db
-          .collection("lessons")
-          .updateOne({ _id: new ObjectId(lessonId) }, updateDoc);
-
-        res.send(result);
-      } catch (err) {
-        res.status(500).send({ error: err.message });
-      }
-    });
-
+    
    
     app.get("/api/lessons/favorites/:userId", async (req, res) => {
       try {
