@@ -221,50 +221,7 @@ async function run() {
       }
     });
 
-    app.post("/api/lessons/:id/favorite", async (req, res) => {
-      try {
-        const lessonId = req.params.id;
-        const { userId } = req.body;
-
-        if (!userId) {
-          return res.status(400).send({ message: "User ID is required" });
-        }
-
-        const lesson = await db
-          .collection("lessons")
-          .findOne({ _id: new ObjectId(lessonId) });
-
-        if (!lesson) {
-          return res.status(404).send({ message: "Lesson not found" });
-        }
-
-        const hasFavorited = lesson.favorites?.includes(userId);
-        let updateDoc;
-
-        if (hasFavorited) {
-          // অলরেডি সেভ করা থাকলে: রিমুভ করব এবং কাউন্ট কমাবো
-          updateDoc = {
-            $pull: { favorites: userId },
-            $inc: { favoritesCount: -1 },
-          };
-        } else {
-          // সেভ করা না থাকলে: অ্যাড করব এবং কাউন্ট বাড়াবো
-          updateDoc = {
-            $addToSet: { favorites: userId },
-            $inc: { favoritesCount: 1 },
-          };
-        }
-
-        const result = await db
-          .collection("lessons")
-          .updateOne({ _id: new ObjectId(lessonId) }, updateDoc);
-
-        res.send(result);
-      } catch (err) {
-        res.status(500).send({ error: err.message });
-      }
-    });
-
+   
     app.get("/api/lessons/favorites/:userId", async (req, res) => {
       try {
         const { userId } = req.params;
@@ -321,7 +278,46 @@ async function run() {
           .json({ message: "Internal Server Error", error: error.message });
       }
     });
-   
+    app.post("/create-checkout-session", async (req, res) => {
+      const { userId, userEmail } = req.body; // ফ্রন্টএন্ড থেকে পাঠানো ইউজার ইমেইল
+
+      try {
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+
+          // 💡 এই লাইনটি যোগ করুন: ফ্রন্টএন্ড থেকে আসা ইউজারের আসল ইমেইলটি এখানে পাস করুন
+          customer_email: userEmail,
+
+          line_items: [
+            {
+              price_data: {
+                currency: "bdt",
+                product_data: {
+                  name: "Digital Life Lessons - Lifetime Premium ⭐",
+                  description:
+                    "আজীবন প্রিমিয়াম মেম্বারশিপ এবং সকল কন্টেন্টের ফুল অ্যাক্সেস।",
+                },
+                unit_amount: 150000, // ৳১৫০০
+              },
+              quantity: 1,
+            },
+          ],
+          mode: "payment",
+          metadata: {
+            userId: userId,
+            userEmail: userEmail,
+          },
+          success_url:
+            "http://localhost:3000/payment-success?session_id={CHECKOUT_SESSION_ID}",
+          cancel_url: "http://localhost:3000/pricing",
+        });
+
+        res.json({ url: session.url });
+      } catch (error) {
+        console.error("Stripe error:", error);
+        res.status(500).json({ error: error.message });
+      }
+    });
 
     app.get("/api/verify-payment", async (req, res) => {
       const { session_id } = req.query;
